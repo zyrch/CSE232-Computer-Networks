@@ -12,52 +12,22 @@
 #include <signal.h>
 
 #define PORT 8080
-#define BACKLOG 32
+#define N 1
 
 // creates and binds socket to specified port
-int start_listening(int port);
-void* serve_connections(void *arg);
+int start_connection(int port);
 
 int main() {
 
-  int sockfd = start_listening(PORT);
- 
-  while(1) {
 
-    struct sockaddr_in client_addr;
-    socklen_t client_addr_size = sizeof(client_addr);
-    int connectionfd = accept(sockfd, (struct sockaddr*)&client_addr, &client_addr_size);
+  for (int i = 0; i < N; ++i) {
+    int sockfd = start_connection(PORT);
 
-    if (connectionfd < 0) {
-      perror("accept");
-    }
-    
-    pthread_t thread;
-
-    struct thread_config config;
-    config.sockfd = connectionfd;
-
-    int res = pthread_create(&thread, NULL, serve_connection, &config);
-
-    if (res < 0) {
-      perror("pthread_create");
-      return -1;
-    }
-
+    close(sockfd);
   }
-
-  close(sockfd);
-
-  return 0;
 }
 
-void* serve_connection(void *arg) {
-
-  
-
-}
-
-int start_listening(int port) {
+int start_connection(int port) {
 
   // side effects - Output to screen (IO)
 
@@ -86,18 +56,12 @@ int start_listening(int port) {
 
   socklen_t server_addr_size = sizeof(server_addr);
 
-  if (bind(sockfd, (struct sockaddr*)&server_addr, server_addr_size) < 0) {
-    perror("bind");
+  if (connect(sockfd, (struct sockaddr*)&server_addr, server_addr_size) < 0) {
+    perror("connect");
     return -1;
   }
 
-  if (listen(sockfd, BACKLOG) == -1) {
-    perror("listen");
-    return -1;
-  }
-
-  printf("Listening on port %d\n", PORT);
+  printf("Connection establised on port %d\n", PORT);
 
   return sockfd;
 }
-
