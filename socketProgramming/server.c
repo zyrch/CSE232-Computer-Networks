@@ -10,13 +10,14 @@
 #include <arpa/inet.h>
 #include <sys/wait.h>
 #include <signal.h>
+#include <pthread.h>
 
 #define PORT 8080
 #define BACKLOG 32
 
 // creates and binds socket to specified port
 int start_listening(int port);
-void* serve_connections(void *arg);
+void* serve_connection(void *arg);
 
 int main() {
 
@@ -34,10 +35,10 @@ int main() {
     
     pthread_t thread;
 
-    struct thread_config config;
-    config.sockfd = connectionfd;
+    int thread_config = connectionfd;
 
-    int res = pthread_create(&thread, NULL, serve_connection, &config);
+    int res = pthread_create(&thread, NULL, serve_connection, (void *)&thread_config);
+    printf("res ");
 
     if (res < 0) {
       perror("pthread_create");
@@ -53,7 +54,8 @@ int main() {
 
 void* serve_connection(void *arg) {
 
-  
+  int connectionfd = *((int *)arg);
+  printf("Server started");  
 
 }
 
