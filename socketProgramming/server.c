@@ -168,7 +168,7 @@ void write_processes_to_file(const std::vector<process> &processes, char *fileNa
   sprintf(&buffer[strlen(buffer)], "%s", end);
 
   char fileNameFull[256];
-  sprintf(fileNameFull, "./%s_%d", fileName, connectionfd);
+  sprintf(fileNameFull, "./server/%s_%d", fileName, connectionfd);
   
 
   FILE *file = fopen(fileNameFull, "w");
@@ -182,7 +182,7 @@ void send_file(int connectionfd, char *fileName) {
   char buf[1200];
 
   char fileNameFull[256];
-  sprintf(fileNameFull, "./%s_%d", fileName, connectionfd);
+  sprintf(fileNameFull, "./server/%s_%d", fileName, connectionfd);
   
   FILE *file = fopen(fileNameFull, "r");
 

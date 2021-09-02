@@ -13,7 +13,7 @@
 #include <pthread.h>
 
 #define PORT 8080
-#define NUM_CLIENTS 2
+#define NUM_CLIENTS 100
 
 char N[] = "10";
 char FILENAME[] = "processes_info_client";
@@ -53,7 +53,7 @@ void recv_file(int connectionfd, char *fileName) {
   char buf[1200];
 
   char fileNameFull[256];
-  sprintf(fileNameFull, "./%s_%d", fileName, connectionfd);
+  sprintf(fileNameFull, "./client/%s_%d", fileName, connectionfd);
   
   FILE *file = fopen(fileNameFull, "w");
 
@@ -81,7 +81,7 @@ void recv_file(int connectionfd, char *fileName) {
 void send_top_process(int connectionfd, char *fileName) {
 
   char fileNameFull[256];
-  sprintf(fileNameFull, "./%s_%d", fileName, connectionfd);
+  sprintf(fileNameFull, "./client/%s_%d", fileName, connectionfd);
   
   FILE *file = fopen(fileNameFull, "r");
 
