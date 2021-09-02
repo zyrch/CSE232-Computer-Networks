@@ -7,9 +7,6 @@ server: server.c
 client: client.c
 		g++ client.c -o client_ -lpthread
 
-run:
-		./server_ & ./client_ && fg
-
 clean:
 		rm -f server_ client_ processes_info*
 
