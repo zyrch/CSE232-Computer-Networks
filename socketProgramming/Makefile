@@ -8,6 +8,6 @@ client: client.c
 		g++ client.c -o client_ -lpthread
 
 clean:
-		rm -f server_ client_ processes_info*
+		rm -f server_ client_ server/* client/*
 
 .PHONY: all server client clean

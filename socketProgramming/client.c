@@ -13,7 +13,8 @@
 #include <pthread.h>
 
 #define PORT 8080
-#define NUM_CLIENTS 100
+
+int NUM_CLIENTS = 1;
 
 char N[] = "10";
 char FILENAME[] = "processes_info_client";
@@ -29,7 +30,17 @@ struct process {
 void * start_connection(void *arg);
 void recv_file(int connectionfd, char *fileName);
 
-int main() {
+int main(int argc, char* argv[]) {
+
+  if (argc > 1) {
+    NUM_CLIENTS = atoi(argv[1]);
+    if (NUM_CLIENTS == 0) {
+      printf("Invalid parameter 'NUM_CLIENTS'\n");
+      return 1;
+    }
+  } else {
+    printf("Number of clients not provided, using the default value of 1 \n");
+  }
 
   pthread_t thread[NUM_CLIENTS];
   for (int i = 0; i < NUM_CLIENTS; ++i) {

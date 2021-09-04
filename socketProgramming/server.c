@@ -13,6 +13,7 @@
 #include <pthread.h>
 #include <ctype.h>
 #include <dirent.h>
+#include <fcntl.h>
 
 #define PORT 8080
 #define BACKLOG 32
@@ -109,21 +110,29 @@ void* serve_connection(void *arg) {
     if (!is_pid) continue;
 
     sprintf(fileName, "/proc/%s/stat", de->d_name);
-    FILE *file;
 
-    file = fopen(fileName, "r");
-    
-    if (file == NULL) {
-      perror("file");
+    int file = open(fileName, O_RDONLY);
+
+    if (file < 0) {
+      perror("open");
       continue;
     }
+
+    char fileBuf [8192 * 4];
+    int res = read(file, fileBuf, 8192 * 4);
+
+    if (res < 0) {
+      perror("read");
+    }
+
+
     process p;
 
-    fscanf(file, "%d %s %*c %*d %*d %*d %*d %*d %*u %*lu %*lu %*lu %*lu %lu %lu", &p.pid, p.pname, &p.stime, &p.utime); 
+    sscanf(fileBuf, "%d %s %*c %*d %*d %*d %*d %*d %*u %*lu %*lu %*lu %*lu %lu %lu", &p.pid, p.pname, &p.stime, &p.utime); 
 
     processes.push_back(p);
 
-    fclose(file);
+    close(file);
   }
 
   closedir(dir_proc);
@@ -147,7 +156,7 @@ void* serve_connection(void *arg) {
     pthread_exit(NULL);
   }
 
-  printf("Process info sent by client %s\n", buf);
+  printf("Top Running process info sent by client: %s\n", buf);
   fflush(stdout);
 
   free (arg);
