@@ -22,8 +22,6 @@ def plot(times):
     plt.title('num processes vs response time')
     plt.show()
 
-plt.savefig("plot.jpg")
-
 if __name__ == "__main__":
 
     DIR = "response_times"
