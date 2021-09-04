@@ -33,16 +33,22 @@ struct process {
   }
 };
 
+struct thread_config {
+  int sockfd;
+  int id;
+};
+
 // creates and binds socket to specified port
 int start_listening(int port);
 void* serve_connection(void *arg);
 void write_to_buffer(char *buffer, char *str);
-void write_processes_to_file(const std::vector<process> &processes, char *fileName, int connectionfd);
-void send_file(int connectionfd, char *fileName);
+void write_processes_to_file(const std::vector<process> &processes, char *fileName, int id);
+void send_file(int connectionfd, char *fileName, int id);
 
 int main() {
 
   int sockfd = start_listening(PORT);
+  int cnt = 1;
  
   while(1) {
 
@@ -56,10 +62,11 @@ int main() {
     
     pthread_t thread;
 
-    int *thread_config = (int *)malloc(sizeof(int));
-    *thread_config = connectionfd;
+    thread_config *config = (thread_config *)malloc(sizeof(thread_config));
+    config->sockfd = connectionfd;
+    config->id = cnt++;
 
-    int res = pthread_create(&thread, NULL, serve_connection, (void *)thread_config);
+    int res = pthread_create(&thread, NULL, serve_connection, (void *)config);
 
     if (res < 0) {
       perror("pthread_create");
@@ -75,7 +82,9 @@ int main() {
 
 void* serve_connection(void *arg) {
 
-  int connectionfd = *((int *)arg);
+  thread_config config = *((thread_config *) arg);
+  int connectionfd = config.sockfd;
+  int id = config.id;
 
   char buf[1024];
   int message_length = recv(connectionfd, buf, 1024, 0);
@@ -114,7 +123,7 @@ void* serve_connection(void *arg) {
     int file = open(fileName, O_RDONLY);
 
     if (file < 0) {
-      perror("open");
+      // perror("open");
       continue;
     }
 
@@ -143,8 +152,8 @@ void* serve_connection(void *arg) {
     processes.pop_back();
   }
 
-  write_processes_to_file(processes, FILENAME, connectionfd);
-  send_file(connectionfd, FILENAME);
+  write_processes_to_file(processes, FILENAME, id);
+  send_file(connectionfd, FILENAME, id);
 
   message_length = recv(connectionfd, buf, 1024, 0);
   if (message_length < 0) {
@@ -161,11 +170,13 @@ void* serve_connection(void *arg) {
 
   free (arg);
 
+  close(connectionfd);
+
   return (void *)0;
 
 }
 
-void write_processes_to_file(const std::vector<process> &processes, char *fileName, int connectionfd) {
+void write_processes_to_file(const std::vector<process> &processes, char *fileName, int id) {
   char buffer[8192 * 4];
   for (const process &p : processes) {
     char info[1200];
@@ -177,8 +188,7 @@ void write_processes_to_file(const std::vector<process> &processes, char *fileNa
   sprintf(&buffer[strlen(buffer)], "%s", end);
 
   char fileNameFull[256];
-  sprintf(fileNameFull, "./server/%s_%d", fileName, connectionfd);
-  
+  sprintf(fileNameFull, "./server/%s_%d", fileName, id);
 
   FILE *file = fopen(fileNameFull, "w");
   fprintf(file,"%s", buffer); 
@@ -186,12 +196,12 @@ void write_processes_to_file(const std::vector<process> &processes, char *fileNa
   fclose(file);
 }
 
-void send_file(int connectionfd, char *fileName) {
+void send_file(int connectionfd, char *fileName, int id) {
   
   char buf[1200];
 
   char fileNameFull[256];
-  sprintf(fileNameFull, "./server/%s_%d", fileName, connectionfd);
+  sprintf(fileNameFull, "./server/%s_%d", fileName, id);
   
   FILE *file = fopen(fileNameFull, "r");
 

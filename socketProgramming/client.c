@@ -11,24 +11,28 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <pthread.h>
+#include <ctype.h>
+#include <dirent.h>
+#include <fcntl.h>
 
 #define PORT 8080
 
 int NUM_CLIENTS = 1;
 
-char N[] = "10";
+char N[] = "30";
 char FILENAME[] = "processes_info_client";
 
 struct process {
   int pid;
   char pname[1024];
   unsigned long int time;
+  unsigned long int utime, stime;
 };
 
 
 // creates and binds socket to specified port
 void * start_connection(void *arg);
-void recv_file(int connectionfd, char *fileName);
+void recv_file(int connectionfd, char *fileName, int id);
 
 int main(int argc, char* argv[]) {
 
@@ -43,10 +47,11 @@ int main(int argc, char* argv[]) {
   }
 
   pthread_t thread[NUM_CLIENTS];
+  int thread_config[NUM_CLIENTS];
   for (int i = 0; i < NUM_CLIENTS; ++i) {
 
-    int thread_config = 8080;
-    int res = pthread_create(&thread[i], NULL, start_connection, (void *)&thread_config);
+    thread_config[i] = i + 1;
+    int res = pthread_create(&thread[i], NULL, start_connection, (void *)&thread_config[i]);
 
     if (res < 0) {
       perror("pthread_create");
@@ -59,19 +64,19 @@ int main(int argc, char* argv[]) {
   }
 }
 
-void recv_file(int connectionfd, char *fileName) {
+void recv_file(int connectionfd, char *fileName, int id) {
   
   char buf[1200];
 
   char fileNameFull[256];
-  sprintf(fileNameFull, "./client/%s_%d", fileName, connectionfd);
+  sprintf(fileNameFull, "./client/%s_%d", fileName, id);
   
   FILE *file = fopen(fileNameFull, "w");
 
   while(1) {
     int bytes_received = recv(connectionfd, buf, sizeof(buf), 0);
     if (bytes_received < 0) {
-      perror("send fil1e");
+      perror("send file");
       return;
     }
     if (bytes_received == 0) {
@@ -89,21 +94,65 @@ void recv_file(int connectionfd, char *fileName) {
   fclose(file);
 }
 
-void send_top_process(int connectionfd, char *fileName) {
+void send_top_process(int connectionfd) {
 
-  char fileNameFull[256];
-  sprintf(fileNameFull, "./client/%s_%d", fileName, connectionfd);
-  
-  FILE *file = fopen(fileNameFull, "r");
+  struct dirent *de;
+  DIR *dir_proc = opendir("/proc");
+  if (dir_proc == NULL) {
+    perror("opendir");
+    exit(-1);
+  }
 
-  process p;
+  process top_process;
+
+  char fileName[1024];
+  while((de = readdir(dir_proc)) != NULL) {
+    
+    int is_pid = 1;
+    for (char *ch = de->d_name; *ch; ++ch) {
+      if (!isdigit(*ch)) {
+        is_pid = 0;
+      }
+    }
+    if (!is_pid) continue;
+
+    sprintf(fileName, "/proc/%s/stat", de->d_name);
+
+    int file = open(fileName, O_RDONLY);
+
+    if (file < 0) {
+      // perror("open");
+      continue;
+    }
+
+    char fileBuf [8192 * 4];
+    int res = read(file, fileBuf, 8192 * 4);
+
+    if (res < 0) {
+      perror("read");
+    }
+
+
+    process p;
+
+    sscanf(fileBuf, "%d %s %*c %*d %*d %*d %*d %*d %*u %*lu %*lu %*lu %*lu %lu %lu", &p.pid, p.pname, &p.stime, &p.utime); 
+
+    if (p.stime + p.utime > top_process.stime + top_process.utime) {
+      top_process = p;
+    }
+
+    close(file);
+  }
+
+  closedir(dir_proc);
+
+  top_process.time = top_process.stime + top_process.utime;
 
   // file line of is the largest consuming process
-  char top_process[1200];
-  fscanf(file, "%d %s %lu\n", &p.pid, p.pname, &p.time); 
-  sprintf(top_process, "%d %s %lu", p.pid, p.pname, p.time);
+  char top_process_buf[1200];
+  sprintf(top_process_buf, "%d %s %lu", top_process.pid, top_process.pname, top_process.time);
 
-  int bytes_sent = send(connectionfd, top_process, sizeof(top_process), 0);
+  int bytes_sent = send(connectionfd, top_process_buf, sizeof(top_process_buf), 0);
   if (bytes_sent < 0) {
     perror("send");
     exit(-1);
@@ -112,7 +161,6 @@ void send_top_process(int connectionfd, char *fileName) {
     printf("connected closed");
     exit(-1);
   }
-  fclose(file);
 
 }
 
@@ -122,9 +170,8 @@ void* start_connection(void *arg) {
 
   // side effects - Output to screen (IO)
 
-  printf("Starting server...\n");
-
-  int port = *((int *)arg);
+  int id = *((int *)arg);
+  int port = PORT;
   int sockfd = socket(AF_INET, SOCK_STREAM, 0);
     
   if (sockfd < 0) {
@@ -166,8 +213,8 @@ void* start_connection(void *arg) {
     exit(-1);
   }
 
-  recv_file(sockfd, FILENAME);
-  send_top_process(sockfd, FILENAME);
+  recv_file(sockfd, FILENAME, id);
+  send_top_process(sockfd);
 
   close(sockfd);
 

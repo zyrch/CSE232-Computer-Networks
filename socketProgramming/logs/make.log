@@ -1,0 +1,3 @@
+rm -f server_ client_ server/* client/*
+g++ server.c -o server_ -lpthread
+g++ client.c -o client_ -lpthread

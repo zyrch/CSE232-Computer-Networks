@@ -10,4 +10,7 @@ client: client.c
 clean:
 		rm -f server_ client_ server/* client/*
 
+clean_resp:
+		rm response_times/*
+
 .PHONY: all server client clean
