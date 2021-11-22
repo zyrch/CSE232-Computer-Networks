@@ -52,9 +52,17 @@ int main() {
       cin>>name;
     }
 
-    /* The logic of the routing algorithm should go here */
     routingAlgo(distanceVectorNodes);
-    /* Add the logic for periodic update (after every 1 sec) here */
+
+    int start_time = (unsigned)time(NULL);
+
+    while(true) {
+      int current_time = (unsigned)time(NULL);
+      if (current_time - start_time > 1) {
+        routingAlgo(distanceVectorNodes);
+        start_time = current_time;
+      }
+    }
     
 }
 
