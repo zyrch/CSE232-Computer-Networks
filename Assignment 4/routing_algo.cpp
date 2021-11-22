@@ -20,7 +20,6 @@ void routingAlgo(vector<RoutingNode*> nd){
       node->sendMsg();
     }
   }
-      
 
   /*Print routing table entries after routing algo converges */
   printRT(nd);
