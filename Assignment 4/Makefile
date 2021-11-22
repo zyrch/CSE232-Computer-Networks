@@ -1,8 +1,8 @@
 
-all:
+build:
 	g++ -std=c++11 main.cpp routing_algo.cpp -o rip
 
-run:
+run: build
 	./rip < sampleinput.txt
 
 clean:
