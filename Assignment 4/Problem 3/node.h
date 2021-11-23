@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <queue>
 
+#define MAX_HOP_COUNT 16
+
 using namespace std;
 
 /*
@@ -183,15 +185,14 @@ class Node {
       msg.recvip = interfaces[i].first.getConnectedIp();		
 
       for (RoutingEntry &entry: msg.mytbl.tbl) {
-        if (entry.dstip == msg.recvip) {
-          entry.cost = 9999;
+        if (entry.nexthop == msg.recvip) {
+          entry.cost = MAX_HOP_COUNT;
         }
       }
 
       interfaces[i].second->recvMsg(msg);
     }
   }
-  
 };
 
 class RoutingNode: public Node {
