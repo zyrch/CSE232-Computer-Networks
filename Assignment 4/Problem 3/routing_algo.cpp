@@ -66,23 +66,23 @@ bool RoutingNode::processQueue() {
       bool entryExists = false;
       for (RoutingEntry &myRouterEntry : mytbl.tbl) {
         if (myRouterEntry.dstip == msgRouterEntry.dstip) {
-          if (myRouterEntry.cost > msgRouterEntry.cost + 1) {
-            if (msgRouterEntry.cost + 1 >= MAX_HOP_COUNT) {
+          if (myRouterEntry.cost > msgRouterEntry.share_cost + 1) {
+            if (msgRouterEntry.share_cost + 1 >= MAX_HOP_COUNT) {
               myRouterEntry.cost = MAX_HOP_COUNT;
               goto x;
             }
-            myRouterEntry.cost = msgRouterEntry.cost + 1;
+            myRouterEntry.cost = msgRouterEntry.share_cost + 1;
             myRouterEntry.nexthop = msg.from;
             myRouterEntry.ip_interface = msg.recvip;
             isTableUpdated = true;
-          }else if (myRouterEntry.cost < msgRouterEntry.cost + 1) {
+          }else if (myRouterEntry.cost < msgRouterEntry.share_cost + 1) {
             // cost is increased, only update if msg is from nexthop
             if (msg.from == myRouterEntry.nexthop) {
-              if (msgRouterEntry.cost + 1 >= MAX_HOP_COUNT) {
+              if (msgRouterEntry.share_cost + 1 >= MAX_HOP_COUNT) {
                 myRouterEntry.cost = MAX_HOP_COUNT;
                 goto x;
               }
-              myRouterEntry.cost = msgRouterEntry.cost + 1;
+              myRouterEntry.cost = msgRouterEntry.share_cost + 1;
               isTableUpdated = true;
             }
           }
@@ -93,7 +93,7 @@ x:
       if (!entryExists) {
         RoutingEntry newEntry;
         newEntry.dstip = msgRouterEntry.dstip;
-        newEntry.cost = min(msgRouterEntry.cost + 1, MAX_HOP_COUNT);
+        newEntry.cost = min(msgRouterEntry.share_cost + 1, MAX_HOP_COUNT);
         newEntry.nexthop = msg.from;
         newEntry.ip_interface = msg.recvip;
         mytbl.tbl.push_back(newEntry);

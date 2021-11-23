@@ -20,6 +20,7 @@ class RoutingEntry{
   string dstip, nexthop;
   string ip_interface;
   int cost;
+  int share_cost;
   /* You will have to add a new variable say, share_cost. 
   'share_cost' holds the cost that has to be shared with the neighbor.
   This change will be required to complete Q.3. of the assignment. */
@@ -186,7 +187,9 @@ class Node {
 
       for (RoutingEntry &entry: msg.mytbl.tbl) {
         if (entry.nexthop == msg.recvip) {
-          entry.cost = MAX_HOP_COUNT;
+          entry.share_cost = MAX_HOP_COUNT;
+        }else {
+          entry.share_cost = entry.cost;
         }
       }
 
