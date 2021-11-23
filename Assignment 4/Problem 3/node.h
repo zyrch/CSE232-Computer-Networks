@@ -182,6 +182,12 @@ class Node {
       msg.mytbl = ntbl;
       msg.recvip = interfaces[i].first.getConnectedIp();		
 
+      for (RoutingEntry &entry: msg.mytbl.tbl) {
+        if (entry.dstip == msg.recvip) {
+          entry.cost = 9999;
+        }
+      }
+
       interfaces[i].second->recvMsg(msg);
     }
   }
