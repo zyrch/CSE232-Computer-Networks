@@ -14,12 +14,12 @@ void routingAlgo(vector<RoutingNode*> nd, bool changeTables=false){
 
   if (changeTables) {
     for (RoutingEntry &entry: nd[0]->getTable()->tbl) {
-      nd[0]->updateTblEntry(entry.dstip, 16);
+      nd[0]->updateTblEntry(entry.dstip, MAX_HOP_COUNT);
     }
 
     for (RoutingEntry &entry: nd[1]->getTable()->tbl) {
       if (entry.dstip == "10.0.0.1") {
-        nd[1]->updateTblEntry(entry.dstip, 16);
+        nd[1]->updateTblEntry(entry.dstip, MAX_HOP_COUNT);
       }
     }
   }
@@ -62,10 +62,15 @@ bool RoutingNode::processQueue() {
     msgQueue.pop();
 
     for (RoutingEntry &msgRouterEntry : msg.mytbl.tbl) {
+
       bool entryExists = false;
       for (RoutingEntry &myRouterEntry : mytbl.tbl) {
         if (myRouterEntry.dstip == msgRouterEntry.dstip) {
           if (myRouterEntry.cost > msgRouterEntry.cost + 1) {
+            if (msgRouterEntry.cost + 1 >= MAX_HOP_COUNT) {
+              myRouterEntry.cost = MAX_HOP_COUNT;
+              goto x;
+            }
             myRouterEntry.cost = msgRouterEntry.cost + 1;
             myRouterEntry.nexthop = msg.from;
             myRouterEntry.ip_interface = msg.recvip;
@@ -73,17 +78,22 @@ bool RoutingNode::processQueue() {
           }else if (myRouterEntry.cost < msgRouterEntry.cost + 1) {
             // cost is increased, only update if msg is from nexthop
             if (msg.from == myRouterEntry.nexthop) {
+              if (msgRouterEntry.cost + 1 >= MAX_HOP_COUNT) {
+                myRouterEntry.cost = MAX_HOP_COUNT;
+                goto x;
+              }
               myRouterEntry.cost = msgRouterEntry.cost + 1;
               isTableUpdated = true;
             }
           }
+x:
           entryExists = true;
         }
       }
       if (!entryExists) {
         RoutingEntry newEntry;
         newEntry.dstip = msgRouterEntry.dstip;
-        newEntry.cost = msgRouterEntry.cost + 1;
+        newEntry.cost = min(msgRouterEntry.cost + 1, MAX_HOP_COUNT);
         newEntry.nexthop = msg.from;
         newEntry.ip_interface = msg.recvip;
         mytbl.tbl.push_back(newEntry);

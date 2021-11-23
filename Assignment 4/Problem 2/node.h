@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <queue>
 
+#define MAX_HOP_COUNT 16
+
 using namespace std;
 
 /*
@@ -181,6 +183,7 @@ class Node {
       msg.from = interfaces[i].first.getip();
       msg.mytbl = ntbl;
       msg.recvip = interfaces[i].first.getConnectedIp();		
+
       interfaces[i].second->recvMsg(msg);
     }
   }
