@@ -111,8 +111,9 @@ class Node {
   virtual void recvMsg(RouteMsg msg) {
     cout<<"Base"<<endl;
   }
-  virtual void processQueue() {
+  virtual bool processQueue() {
     cout<<"Base"<<endl;
+    return false;
   }
   bool isMyInterface(string eth) {
     for (int i = 0; i < interfaces.size(); ++i) {
@@ -147,8 +148,8 @@ class Node {
     return this->name;
   }
   
-  struct routingtbl getTable() {
-    return mytbl;
+  struct routingtbl* getTable() {
+    return &mytbl;
   }
   
   void printTable() {
@@ -180,5 +181,5 @@ class Node {
 class RoutingNode: public Node {
  public:
   void recvMsg(RouteMsg msg);
-  void processQueue();
+  bool processQueue();
 };

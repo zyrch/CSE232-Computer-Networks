@@ -56,13 +56,23 @@ int main() {
 
     int start_time = (unsigned)time(NULL);
 
+    for (RoutingEntry : distanceVectorNodes[0]->getTable().tbl) {
+      if (RoutingEntry.cost != 0) {
+        RoutingEntry.cost = 16;
+      }
+    }
+
+    for (RoutingEntry : distanceVectorNodes[1]->getTable().tbl) {
+      if (RoutingEntry.dstip == "10.0.01") {
+        RoutingEntry.cost = 16;
+      }
+    }
+
     while(true) {
       int current_time = (unsigned)time(NULL);
       if (current_time - start_time > 1) {
-        cout << "==================== STARTING routingAlgo() ====================" << '\n';
         routingAlgo(distanceVectorNodes);
         start_time = current_time;
-        cout << '\n' << endl;
       }
     }
     

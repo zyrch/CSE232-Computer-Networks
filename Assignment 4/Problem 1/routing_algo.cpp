@@ -15,17 +15,25 @@ void routingAlgo(vector<RoutingNode*> nd){
 
   int numNodes = nd.size();
 
-  for (int i = 0; i < numNodes - 1; ++i) {
+  while(1) {
+    /*Print routing table entries after each iteration */
+    printRT(nd);
+
+    bool updated = false;
     for (auto &node : nd) {
       node->sendMsg();
     }
     for (auto &node : nd) {
-      node->processQueue();
+      updated |= node->processQueue();
+    }
+    if (!updated) {
+      break;
     }
   }
 
-  /*Print routing table entries after routing algo converges */
+  cout << "\n \n Routing Tables after convergence:" << '\n';
   printRT(nd);
+
 }
 
 
@@ -35,8 +43,9 @@ void RoutingNode::recvMsg(RouteMsg msg) {
 
 }
 
-void RoutingNode::processQueue() {
+bool RoutingNode::processQueue() {
 
+  bool isTableUpdated = false;
   while(!msgQueue.empty()) {
     RouteMsg msg = msgQueue.front();
     msgQueue.pop();
@@ -45,14 +54,16 @@ void RoutingNode::processQueue() {
       bool entryExists = false;
       for (RoutingEntry &myRouterEntry : mytbl.tbl) {
         if (myRouterEntry.dstip == msgRouterEntry.dstip) {
-          if (myRouterEntry.cost >= msgRouterEntry.cost + 1) {
+          if (myRouterEntry.cost > msgRouterEntry.cost + 1) {
             myRouterEntry.cost = msgRouterEntry.cost + 1;
             myRouterEntry.nexthop = msg.from;
             myRouterEntry.ip_interface = msg.recvip;
-          }else {
+            isTableUpdated = true;
+          }else if (myRouterEntry.cost < msgRouterEntry.cost + 1) {
             // cost is increased, only update if msg is from nexthop
             if (msg.from == myRouterEntry.nexthop) {
               myRouterEntry.cost = msgRouterEntry.cost + 1;
+              isTableUpdated = true;
             }
           }
           entryExists = true;
@@ -65,9 +76,11 @@ void RoutingNode::processQueue() {
         newEntry.nexthop = msg.from;
         newEntry.ip_interface = msg.recvip;
         mytbl.tbl.push_back(newEntry);
+        isTableUpdated = true;
       }
     }
   }
+  return isTableUpdated;
   //your code here
 }
 
