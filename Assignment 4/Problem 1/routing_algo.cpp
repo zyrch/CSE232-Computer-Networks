@@ -16,8 +16,6 @@ void routingAlgo(vector<RoutingNode*> nd){
   int numNodes = nd.size();
 
   while(1) {
-    /*Print routing table entries after each iteration */
-    printRT(nd);
 
     bool updated = false;
     for (auto &node : nd) {
