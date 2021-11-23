@@ -2,6 +2,9 @@
 #include <string>
 #include <vector>
 #include <algorithm>
+#include <queue>
+
+#define MAX_HOP_COUNT 16
 
 using namespace std;
 
@@ -58,7 +61,7 @@ struct routingtbl {
 class RouteMsg {
  public:
   string from;			// I am sending this message, so it must be me i.e. if A is sending mesg to B then it is A's ip address
-  struct routingtbl *mytbl;	// This is routing table of A
+  struct routingtbl mytbl;	// This is routing table received from A
   string recvip;		// B ip address that will receive this message
 };
 
@@ -104,8 +107,15 @@ class Node {
   
  protected:
   struct routingtbl mytbl;
-  virtual void recvMsg(RouteMsg* msg) {
+  queue<RouteMsg> msgQueue;
+
+
+  virtual void recvMsg(RouteMsg msg) {
     cout<<"Base"<<endl;
+  }
+  virtual bool processQueue() {
+    cout<<"Base"<<endl;
+    return false;
   }
   bool isMyInterface(string eth) {
     for (int i = 0; i < interfaces.size(); ++i) {
@@ -126,6 +136,15 @@ class Node {
     eth.setConnectedip(connip);
     interfaces.push_back({eth, nextHop});
   }
+
+  void updateTblEntry(string dstip, int cost) {
+    for (RoutingEntry &entry: this->mytbl.tbl) {
+      if (dstip == entry.dstip) {
+        entry.cost = cost;
+      }
+    }
+  }
+    
   
   void addTblEntry(string myip, int cost) {
     RoutingEntry entry;
@@ -140,8 +159,8 @@ class Node {
     return this->name;
   }
   
-  struct routingtbl getTable() {
-    return mytbl;
+  struct routingtbl* getTable() {
+    return &mytbl;
   }
   
   void printTable() {
@@ -162,15 +181,22 @@ class Node {
     for (int i = 0; i < interfaces.size(); ++i) {
       RouteMsg msg;
       msg.from = interfaces[i].first.getip();
-      msg.mytbl = &ntbl;
+      msg.mytbl = ntbl;
       msg.recvip = interfaces[i].first.getConnectedIp();		
-      interfaces[i].second->recvMsg(&msg);
+
+      for (RoutingEntry &entry: msg.mytbl.tbl) {
+        if (entry.nexthop == msg.recvip) {
+          entry.cost = MAX_HOP_COUNT;
+        }
+      }
+
+      interfaces[i].second->recvMsg(msg);
     }
   }
-  
 };
 
 class RoutingNode: public Node {
  public:
-  void recvMsg(RouteMsg *msg);
+  void recvMsg(RouteMsg msg);
+  bool processQueue();
 };

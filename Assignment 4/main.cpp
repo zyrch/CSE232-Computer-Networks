@@ -1,7 +1,7 @@
 #include "node.h"
 vector<RoutingNode*> distanceVectorNodes;
 
-void routingAlgo(vector<RoutingNode*> distanceVectorNodes);
+void routingAlgo(vector<RoutingNode*>, bool changeTables=false);
 
 int main() {
     int n; // number of nodes
@@ -54,15 +54,8 @@ int main() {
 
     routingAlgo(distanceVectorNodes);
 
-    int start_time = (unsigned)time(NULL);
-
-    while(true) {
-      int current_time = (unsigned)time(NULL);
-      if (current_time - start_time > 1) {
-        routingAlgo(distanceVectorNodes);
-        start_time = current_time;
-      }
-    }
+    cout << "==================== STARTING routingAlgo() ====================" << '\n';
+    routingAlgo(distanceVectorNodes, true);
     
 }
 
